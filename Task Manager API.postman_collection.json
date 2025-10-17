@@ -1,0 +1,645 @@
+{
+	"info": {
+		"_postman_id": "ab44fba2-171a-4c9b-b2b5-9ec3fce620b4",
+		"name": "Task Manager API",
+		"description": "Complete API collection for Task Management System with Google Calendar integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43131181",
+		"_collection_link": "https://gold-crescent-243973.postman.co/workspace/Team-Workspace~695700cb-9d9e-44de-860f-e55cf45dba11/collection/43131181-ab44fba2-171a-4c9b-b2b5-9ec3fce620b4?action=share&source=collection_link&creator=43131181"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Get Auth Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Extract token from response if using OAuth2",
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    if (responseJson.access_token) {",
+									"        pm.environment.set('access_token', responseJson.access_token);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{keycloak_client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "{{username}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{password}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/realms/sare_africa/protocol/openid-connect/token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"realms",
+								"sare_africa",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						},
+						"description": "Get JWT token from Keycloak for authentication"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication endpoints for getting JWT tokens"
+		},
+		{
+			"name": "Tasks",
+			"item": [
+				{
+					"name": "Create Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var responseJson = pm.response.json();",
+									"    pm.environment.set('created_task_id', responseJson.id);",
+									"    console.log('Created task with ID:', responseJson.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Complete project documentation\",\n  \"description\": \"Write comprehensive API documentation and setup guides\",\n  \"status\": \"TODO\",\n  \"priority\": \"HIGH\",\n  \"dueDate\": \"2024-01-15T14:30:00\",\n  \"tags\": [\"work\", \"documentation\", \"urgent\"]\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks"
+							]
+						},
+						"description": "Create a new task with title, description, status, priority, due date, and tags"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Tasks",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks"
+							]
+						},
+						"description": "Get all tasks for the authenticated user"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tasks with Filters",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks?status=TODO&tags=work&tags=urgent&page=0&size=10&sortBy=dueDate&sortDirection=asc",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "TODO"
+								},
+								{
+									"key": "tags",
+									"value": "work"
+								},
+								{
+									"key": "tags",
+									"value": "urgent"
+								},
+								{
+									"key": "page",
+									"value": "0"
+								},
+								{
+									"key": "size",
+									"value": "10"
+								},
+								{
+									"key": "sortBy",
+									"value": "dueDate"
+								},
+								{
+									"key": "sortDirection",
+									"value": "asc"
+								}
+							]
+						},
+						"description": "Get tasks with filtering by status, tags, pagination, and sorting"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Task by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks/{{created_task_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"{{created_task_id}}"
+							]
+						},
+						"description": "Get a specific task by its ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Complete project documentation - Updated\",\n  \"description\": \"Write comprehensive API documentation and setup guides with examples\",\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"URGENT\",\n  \"dueDate\": \"2024-01-20T16:00:00\",\n  \"tags\": [\"work\", \"documentation\", \"urgent\", \"review\"]\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks/{{created_task_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"{{created_task_id}}"
+							]
+						},
+						"description": "Update an existing task (all fields are optional for partial updates)"
+					},
+					"response": []
+				},
+				{
+					"name": "Partial Update Task",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"COMPLETED\"\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks/{{created_task_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"{{created_task_id}}"
+							]
+						},
+						"description": "Partial update - only update the status field"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks/{{created_task_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"{{created_task_id}}"
+							]
+						},
+						"description": "Delete a task by its ID"
+					},
+					"response": []
+				}
+			],
+			"description": "Task management endpoints for CRUD operations"
+		},
+		{
+			"name": "Tags",
+			"item": [
+				{
+					"name": "Get All Tags",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    if (responseJson && responseJson.length > 0) {",
+									"        // Set the first tag's ID for testing",
+									"        pm.environment.set('tag_id', responseJson[0].id);",
+									"        console.log('Tag ID set from first tag:', responseJson[0].id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tags",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tags"
+							]
+						},
+						"description": "Get all tags with their task counts"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Tag by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    pm.environment.set('tag_id', responseJson.id);",
+									"    console.log('Tag ID set:', responseJson.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tags/{{tag_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tags",
+								"{{tag_id}}"
+							]
+						},
+						"description": "Get a specific tag with all associated tasks"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Tag",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tags/{{tag_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tags",
+								"{{tag_id}}"
+							]
+						},
+						"description": "Delete a tag (only if no tasks are associated with it)"
+					},
+					"response": []
+				}
+			],
+			"description": "Tag management endpoints"
+		},
+		{
+			"name": "Google Calendar",
+			"item": [
+				{
+					"name": "Connect Calendar",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/calendar/connect",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"connect"
+							]
+						},
+						"description": "Get Google Calendar authorization URL"
+					},
+					"response": []
+				},
+				{
+					"name": "Calendar OAuth Callback",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/calendar/callback?code={{auth_code}}&state={{user_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"callback"
+							],
+							"query": [
+								{
+									"key": "code",
+									"value": "{{auth_code}}"
+								},
+								{
+									"key": "state",
+									"value": "{{user_id}}"
+								}
+							]
+						},
+						"description": "Handle OAuth callback from Google Calendar"
+					},
+					"response": []
+				}
+			],
+			"description": "Google Calendar integration endpoints"
+		},
+		{
+			"name": "Health & Monitoring",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_base_url}}/actuator/health",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Application health check endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Application Info",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{api_base_url}}/actuator/info",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"actuator",
+								"info"
+							]
+						},
+						"description": "Application information endpoint"
+					},
+					"response": []
+				}
+			],
+			"description": "Health and monitoring endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"console.log('Making request to:', pm.request.url);"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"pm.test('Response time is less than 5000ms', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test('Response has proper content type', function () {",
+					"    if (pm.response.headers.get('Content-Type')) {",
+					"        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+					"    }",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "api_base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "base_url",
+			"value": "http://localhost:9020",
+			"type": "string"
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "created_task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "tag_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "username",
+			"value": "your_username",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "your_password",
+			"type": "string"
+		},
+		{
+			"key": "keycloak_client_id",
+			"value": "sare_africa_api",
+			"type": "string"
+		}
+	]
+}

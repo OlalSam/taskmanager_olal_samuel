@@ -1,0 +1,33 @@
+services:
+  database:
+    image: postgres:latest
+    container_name: sare_africa
+    restart: always
+    environment:
+      POSTGRES_DB: taskmanager_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5100:5432"
+    volumes:
+      - taskmanager_volume:/var/lib/postgresql/data
+    networks:
+      - app_net
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.3.3
+    container_name: keycloak_sare_africa
+    restart: unless-stopped
+    ports:
+      - "9020:8080"
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    command: start-dev
+    networks:
+      - app_net
+networks:
+  app_net:
+    driver: bridge
+
+volumes:
+  taskmanager_volume:

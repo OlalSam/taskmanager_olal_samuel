@@ -1,0 +1,816 @@
+{
+	"info": {
+		"_postman_id": "9549f911-fa66-4521-aaca-20c022b9aa1f",
+		"name": "Google Calendar Operations",
+		"description": "Focused collection for testing Google Calendar integration operations only",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "43131181",
+		"_collection_link": "https://gold-crescent-243973.postman.co/workspace/Team-Workspace~695700cb-9d9e-44de-860f-e55cf45dba11/collection/43131181-9549f911-fa66-4521-aaca-20c022b9aa1f?action=share&source=collection_link&creator=43131181"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Get Auth Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Authentication successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    if (responseJson.access_token) {",
+									"        pm.environment.set('access_token', responseJson.access_token);",
+									"        pm.environment.set('user_id', responseJson.user_id || '7668f061-cf4d-4be8-8d69-7a15c016d4a7');",
+									"        console.log('✅ JWT Token obtained successfully');",
+									"        console.log('User ID:', pm.environment.get('user_id'));",
+									"        console.log('Token saved to environment');",
+									"        console.log('');",
+									"        console.log('🎯 Ready for calendar operations!');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{keycloak_client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "{{username}}",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "{{password}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{keycloak_base_url}}/realms/{{keycloak_realm}}/protocol/openid-connect/token",
+							"host": [
+								"{{keycloak_base_url}}"
+							],
+							"path": [
+								"realms",
+								"{{keycloak_realm}}",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						},
+						"description": "Get JWT token from Keycloak for API authentication"
+					},
+					"response": []
+				}
+			],
+			"description": "Authentication with Keycloak to get JWT token"
+		},
+		{
+			"name": "Calendar Setup",
+			"item": [
+				{
+					"name": "Check Calendar Configuration",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Calendar config loaded', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    console.log('📋 Calendar Configuration Status:');",
+									"    console.log('  Configured:', responseJson.configured);",
+									"    console.log('  Client ID:', responseJson.clientId);",
+									"    console.log('  Redirect URI:', responseJson.redirectUri);",
+									"    ",
+									"    if (responseJson.configured) {",
+									"        console.log('✅ Calendar API is ready for use');",
+									"    } else {",
+									"        console.log('⚠️  Calendar API needs configuration');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/calendar/config",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"config"
+							]
+						},
+						"description": "Verify Google Calendar API configuration"
+					},
+					"response": []
+				},
+				{
+					"name": "Calendar Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Calendar health check passed', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    console.log('🏥 Calendar Health Status:');",
+									"    console.log('  Status:', responseJson.status);",
+									"    console.log('  Configured:', responseJson.configured);",
+									"    ",
+									"    if (responseJson.status === 'HEALTHY') {",
+									"        console.log('✅ Calendar service is operational');",
+									"    } else {",
+									"        console.log('⚠️  Calendar service needs attention');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/calendar/health",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"health"
+							]
+						},
+						"description": "Check calendar service health status"
+					},
+					"response": []
+				}
+			],
+			"description": "Initial setup and configuration checks"
+		},
+		{
+			"name": "OAuth Flow",
+			"item": [
+				{
+					"name": "Get Authorization URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Authorization URL generated', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    pm.environment.set('auth_url', responseJson.authUrl);",
+									"    ",
+									"    console.log('🔗 Google Authorization URL:');",
+									"    console.log(responseJson.authUrl);",
+									"    console.log('');",
+									"    console.log('📋 Manual Steps Required:');",
+									"    console.log('1. Copy the URL above');",
+									"    console.log('2. Open it in your browser');",
+									"    console.log('3. Sign in to Google (if needed)');",
+									"    console.log('4. Click \"Allow\" on consent screen');",
+									"    console.log('5. Copy the \"code\" parameter from redirect URL');",
+									"    console.log('6. Set auth_code environment variable');",
+									"    console.log('7. Run \"Complete OAuth Callback\" request');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/calendar/connect",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"connect"
+							]
+						},
+						"description": "Generate Google OAuth2 authorization URL"
+					},
+					"response": []
+				},
+				{
+					"name": "Complete OAuth Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('OAuth callback successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    console.log('✅ Google Calendar connected successfully!');",
+									"    console.log('Response:', pm.response.text());",
+									"    console.log('');",
+									"console.log('🎉 Ready for calendar sync testing!');",
+									"console.log('You can now create tasks with due dates.');",
+									"} else {",
+									"    console.log('❌ Calendar connection failed');",
+									"    console.log('Status:', pm.response.status);",
+									"    console.log('Response:', pm.response.text());",
+									"    console.log('');",
+									"    console.log('💡 Common issues:');",
+									"    console.log('- Invalid or expired authorization code');",
+									"    console.log('- Incorrect Google OAuth2 credentials');",
+									"    console.log('- Network connectivity problems');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/v1/calendar/callback?state=7668f061-cf4d-4be8-8d69-7a15c016d4a7&code=4%2F0AVGzR1AayFnhAv91ukon6LDMPiiaMQFU3AagMRVVKIRyQgFOzjznZVDdXvcvZxpxMrtZGg&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"callback"
+							],
+							"query": [
+								{
+									"key": "state",
+									"value": "7668f061-cf4d-4be8-8d69-7a15c016d4a7",
+									"description": "User ID for security validation"
+								},
+								{
+									"key": "code",
+									"value": "4%2F0AVGzR1AayFnhAv91ukon6LDMPiiaMQFU3AagMRVVKIRyQgFOzjznZVDdXvcvZxpxMrtZGg",
+									"description": "Authorization code from Google OAuth2 flow"
+								},
+								{
+									"key": "scope",
+									"value": "https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar"
+								}
+							]
+						},
+						"description": "Complete OAuth2 flow with authorization code"
+					},
+					"response": []
+				}
+			],
+			"description": "Google OAuth2 authentication flow"
+		},
+		{
+			"name": "Calendar Sync Operations",
+			"item": [
+				{
+					"name": "Create Task with Calendar Event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Task created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    var responseJson = pm.response.json();",
+									"    pm.environment.set('calendar_task_id', responseJson.id);",
+									"    ",
+									"    console.log('✅ Task created with calendar sync!');",
+									"    console.log('Task ID:', responseJson.id);",
+									"console.log('Title:', responseJson.title);",
+									"console.log('Due Date:', responseJson.dueDate);",
+									"console.log('');",
+									"console.log('📅 Calendar Event Created:');",
+									"console.log('- Check your Google Calendar');",
+									"console.log('- Event title: \"' + responseJson.title + '\"');",
+									"console.log('- Event time: ' + responseJson.dueDate);",
+									"console.log('- Duration: 1 hour');",
+									"} else {",
+									"    console.log('❌ Task creation failed');",
+									"    console.log('Status:', pm.response.status);",
+									"    console.log('Response:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"November Task\",\n  \"description\": \"This task will create a calendar event in Google Calendar\",\n  \"status\": \"TODO\",\n  \"priority\": \"HIGH\",\n  \"dueDate\": \"2025-09-25T14:30:00\",\n  \"tags\": [\"calendar\", \"test\", \"sync\"]\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks"
+							]
+						},
+						"description": "Create a task that will automatically sync to Google Calendar"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Task (Calendar Sync)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Task updated successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    var responseJson = pm.response.json();",
+									"    ",
+									"    console.log('✅ Task updated with calendar sync!');",
+									"    console.log('Task ID:', responseJson.id);",
+									"    console.log('Updated Title:', responseJson.title);",
+									"console.log('Updated Due Date:', responseJson.dueDate);",
+									"console.log('');",
+									"console.log('📅 Calendar Event Updated:');",
+									"console.log('- Check your Google Calendar');",
+									"console.log('- Event should reflect new title and time');",
+									"console.log('- Previous event details should be updated');",
+									"} else {",
+									"    console.log('❌ Task update failed');",
+									"    console.log('Status:', pm.response.status);",
+									"    console.log('Response:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Updated Calendar Sync Task\",\n  \"description\": \"This task was updated and should sync changes to Google Calendar\",\n  \"status\": \"IN_PROGRESS\",\n  \"priority\": \"URGENT\",\n  \"dueDate\": \"2025-07-26T10:00:00\",\n  \"tags\": [\"calendar\", \"test\", \"updated\"]\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks/{{calendar_task_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"{{calendar_task_id}}"
+							]
+						},
+						"description": "Update task to test calendar event synchronization"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Task (Calendar Sync)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Task deleted successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    console.log('✅ Task deleted with calendar sync!');",
+									"console.log('');",
+									"console.log('📅 Calendar Event Deleted:');",
+									"console.log('- Check your Google Calendar');",
+									"console.log('- The corresponding event should be removed');",
+									"console.log('- Calendar should be clean');",
+									"} else {",
+									"    console.log('❌ Task deletion failed');",
+									"    console.log('Status:', pm.response.status);",
+									"    console.log('Response:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks/{{calendar_task_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks",
+								"{{calendar_task_id}}"
+							]
+						},
+						"description": "Delete task to test calendar event deletion"
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			],
+			"description": "Test calendar synchronization with task operations"
+		},
+		{
+			"name": "Calendar Edge Cases",
+			"item": [
+				{
+					"name": "Task Without Due Date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Task created without due date', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    var responseJson = pm.response.json();",
+									"    ",
+									"    console.log('✅ Task created without due date');",
+									"    console.log('Task ID:', responseJson.id);",
+									"    console.log('Due Date:', responseJson.dueDate);",
+									"console.log('');",
+									"console.log('📅 Calendar Sync Behavior:');",
+									"console.log('- No calendar event should be created');",
+									"console.log('- Check application logs for \"skipping sync\" message');",
+									"console.log('- This is expected behavior');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Task Without Due Date\",\n  \"description\": \"This task has no due date and should not create a calendar event\",\n  \"status\": \"TODO\",\n  \"priority\": \"LOW\",\n  \"tags\": [\"no-due-date\", \"test\"]\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks"
+							]
+						},
+						"description": "Test that tasks without due dates don't create calendar events"
+					},
+					"response": []
+				},
+				{
+					"name": "Task with Past Due Date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Task created with past due date', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    var responseJson = pm.response.json();",
+									"    ",
+									"    console.log('✅ Task created with past due date');",
+									"    console.log('Task ID:', responseJson.id);",
+									"    console.log('Due Date:', responseJson.dueDate);",
+									"console.log('');",
+									"console.log('📅 Calendar Sync Behavior:');",
+									"console.log('- Calendar event should still be created');",
+									"console.log('- Check your Google Calendar for the event');",
+									"console.log('- Event will appear in the past');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Past Due Task\",\n  \"description\": \"This task has a past due date but should still create a calendar event\",\n  \"status\": \"OVERDUE\",\n  \"priority\": \"HIGH\",\n  \"dueDate\": \"2023-12-01T10:00:00\",\n  \"tags\": [\"past-due\", \"test\"]\n}"
+						},
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/tasks",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tasks"
+							]
+						},
+						"description": "Test calendar sync with past due dates"
+					},
+					"response": []
+				},
+				{
+					"name": "Invalid OAuth Callback",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Invalid callback handled properly', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"console.log('❌ Expected error for invalid callback');",
+									"console.log('Status:', pm.response.status);",
+									"console.log('Response:', pm.response.text());",
+									"console.log('');",
+									"console.log('💡 This confirms proper error handling');",
+									"console.log('- Invalid codes are rejected');",
+									"console.log('- System remains secure');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{api_base_url}}/api/v1/calendar/callback?code=invalid_code_123&state={{user_id}}",
+							"host": [
+								"{{api_base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"calendar",
+								"callback"
+							],
+							"query": [
+								{
+									"key": "code",
+									"value": "invalid_code_123",
+									"description": "Invalid authorization code for testing"
+								},
+								{
+									"key": "state",
+									"value": "{{user_id}}",
+									"description": "User ID"
+								}
+							]
+						},
+						"description": "Test error handling with invalid authorization code"
+					},
+					"response": []
+				}
+			],
+			"description": "Test edge cases and error scenarios"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Pre-request script for calendar operations",
+					"console.log('🚀 Calendar Operation:', pm.request.name);",
+					"console.log('📍 URL:', pm.request.url);",
+					"",
+					"// Validate required environment variables",
+					"if (pm.request.headers.has('Authorization') && !pm.environment.get('access_token')) {",
+					"    console.log('⚠️  Warning: No access token found');",
+					"    console.log('   Please ensure you have a valid JWT token');",
+					"}",
+					"",
+					"// Check for calendar-specific variables",
+					"if (pm.request.url.toString().includes('callback') && !pm.environment.get('auth_code')) {",
+					"    console.log('⚠️  Warning: No auth_code found');",
+					"    console.log('   Please complete OAuth flow first');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Collection-level test script",
+					"pm.test('Response time is acceptable', function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(15000);",
+					"});",
+					"",
+					"pm.test('Response has proper content type', function () {",
+					"    if (pm.response.headers.get('Content-Type')) {",
+					"        pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+					"    }",
+					"});",
+					"",
+					"// Calendar-specific logging",
+					"if (pm.request.url.toString().includes('calendar')) {",
+					"    console.log('📅 Calendar endpoint response time:', pm.response.responseTime + 'ms');",
+					"}",
+					"",
+					"// Log any errors for debugging",
+					"if (pm.response.code >= 400) {",
+					"    console.log('❌ Error response:', pm.response.status, pm.response.text());",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "api_base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "keycloak_base_url",
+			"value": "http://localhost:9020",
+			"type": "string"
+		},
+		{
+			"key": "keycloak_client_id",
+			"value": "sare_africa_api",
+			"type": "string"
+		},
+		{
+			"key": "keycloak_realm",
+			"value": "sare_africa",
+			"type": "string"
+		}
+	]
+}

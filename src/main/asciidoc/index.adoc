@@ -1,0 +1,327 @@
+= Task Management API Documentation
+:doctype: book
+:toc: left
+:toclevels: 3
+:snippets: target/generated-snippets
+
+== Overview
+
+The Task Management API provides comprehensive functionality for managing tasks and tags with Google Calendar integration. All endpoints require JWT authentication via Bearer token.
+
+=== Key Features
+
+* **Task Management**: Create, read, update, and delete tasks
+* **Tag Management**: Automatic tag creation and user-specific tag organization
+* **Advanced Filtering**: Filter tasks by status, tags, and pagination
+* **Calendar Integration**: Automatic synchronization with Google Calendar
+* **User Isolation**: All data is scoped to the authenticated user
+
+=== Base URL
+
+All API endpoints are prefixed with `/api/v1`.
+
+== Authentication
+
+All endpoints require authentication using JWT Bearer tokens. Include the token in the Authorization header:
+
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+== Task Management
+
+=== Create Task
+
+Create a new task with optional tags and due date.
+
+==== Request
+
+include::{snippets}/create-task/http-request.adoc[]
+
+==== Request Fields
+
+include::{snippets}/create-task/request-fields.adoc[]
+
+==== Response
+
+include::{snippets}/create-task/http-response.adoc[]
+
+==== Response Fields
+
+include::{snippets}/create-task/response-fields.adoc[]
+
+==== Example
+
+```bash
+curl -X POST http://localhost:8080/api/v1/tasks \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Complete project documentation",
+    "description": "Write comprehensive API documentation",
+    "status": "TODO",
+    "priority": "HIGH",
+    "dueDate": "2024-01-15T10:00:00",
+    "tags": ["work", "urgent"]
+  }'
+```
+
+=== Get Task by ID
+
+Retrieve a specific task by its unique identifier.
+
+==== Request
+
+include::{snippets}/get-task-by-id/http-request.adoc[]
+
+==== Path Parameters
+
+include::{snippets}/get-task-by-id/path-parameters.adoc[]
+
+==== Response
+
+include::{snippets}/get-task-by-id/http-response.adoc[]
+
+==== Response Fields
+
+include::{snippets}/get-task-by-id/response-fields.adoc[]
+
+==== Example
+
+```bash
+curl -X GET http://localhost:8080/api/v1/tasks/12345678-1234-1234-1234-123456789012 \
+  -H "Authorization: Bearer <token>"
+```
+
+=== List Tasks with Filters
+
+Retrieve a paginated list of tasks with optional filtering by status and tags.
+
+==== Request
+
+include::{snippets}/get-all-tasks/http-request.adoc[]
+
+==== Query Parameters
+
+include::{snippets}/get-all-tasks/query-parameters.adoc[]
+
+==== Response
+
+include::{snippets}/get-all-tasks/http-response.adoc[]
+
+==== Response Fields
+
+include::{snippets}/get-all-tasks/response-fields.adoc[]
+
+==== Examples
+
+**Get all tasks:**
+```bash
+curl -X GET http://localhost:8080/api/v1/tasks \
+  -H "Authorization: Bearer <token>"
+```
+
+**Filter by status:**
+```bash
+curl -X GET "http://localhost:8080/api/v1/tasks?status=TODO" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Filter by tags (OR logic):**
+```bash
+curl -X GET "http://localhost:8080/api/v1/tasks?tags=work&tags=urgent" \
+  -H "Authorization: Bearer <token>"
+```
+
+**Pagination:**
+```bash
+curl -X GET "http://localhost:8080/api/v1/tasks?page=0&size=10&sortBy=createdAt&sortDirection=desc" \
+  -H "Authorization: Bearer <token>"
+```
+
+=== Update Task
+
+Update an existing task. All fields are optional - only provided fields will be updated.
+
+==== Request
+
+include::{snippets}/update-task/http-request.adoc[]
+
+==== Path Parameters
+
+include::{snippets}/update-task/path-parameters.adoc[]
+
+==== Request Fields
+
+include::{snippets}/update-task/request-fields.adoc[]
+
+==== Response
+
+include::{snippets}/update-task/http-response.adoc[]
+
+==== Response Fields
+
+include::{snippets}/update-task/response-fields.adoc[]
+
+==== Example
+
+```bash
+curl -X PUT http://localhost:8080/api/v1/tasks/12345678-1234-1234-1234-123456789012 \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Updated task title",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH"
+  }'
+```
+
+=== Delete Task
+
+Delete a task and its associated calendar event.
+
+==== Request
+
+include::{snippets}/delete-task/http-request.adoc[]
+
+==== Path Parameters
+
+include::{snippets}/delete-task/path-parameters.adoc[]
+
+==== Response
+
+include::{snippets}/delete-task/http-response.adoc[]
+
+==== Example
+
+```bash
+curl -X DELETE http://localhost:8080/api/v1/tasks/12345678-1234-1234-1234-123456789012 \
+  -H "Authorization: Bearer <token>"
+```
+
+== Tag Management
+
+=== List All Tags
+
+Retrieve all tags for the current user with task counts.
+
+==== Request
+
+include::{snippets}/get-all-tags/http-request.adoc[]
+
+==== Response
+
+include::{snippets}/get-all-tags/http-response.adoc[]
+
+==== Response Fields
+
+include::{snippets}/get-all-tags/response-fields.adoc[]
+
+==== Example
+
+```bash
+curl -X GET http://localhost:8080/api/v1/tags \
+  -H "Authorization: Bearer <token>"
+```
+
+=== Get Tag Details
+
+Retrieve detailed information about a specific tag including associated tasks.
+
+==== Request
+
+include::{snippets}/get-tag-by-id/http-request.adoc[]
+
+==== Path Parameters
+
+include::{snippets}/get-tag-by-id/path-parameters.adoc[]
+
+==== Response
+
+include::{snippets}/get-tag-by-id/http-response.adoc[]
+
+==== Response Fields
+
+include::{snippets}/get-tag-by-id/response-fields.adoc[]
+
+==== Example
+
+```bash
+curl -X GET http://localhost:8080/api/v1/tags/11111111-2222-3333-4444-555555555555 \
+  -H "Authorization: Bearer <token>"
+```
+
+=== Delete Tag
+
+Delete a tag. The tag must not be associated with any tasks.
+
+==== Request
+
+include::{snippets}/delete-tag/http-request.adoc[]
+
+==== Path Parameters
+
+include::{snippets}/delete-tag/path-parameters.adoc[]
+
+==== Response
+
+include::{snippets}/delete-tag/http-response.adoc[]
+
+==== Example
+
+```bash
+curl -X DELETE http://localhost:8080/api/v1/tags/11111111-2222-3333-4444-555555555555 \
+  -H "Authorization: Bearer <token>"
+```
+
+== Data Models
+
+=== Task Status
+
+| Status | Description
+| `TODO` | Task is not yet started
+| `IN_PROGRESS` | Task is currently being worked on
+| `COMPLETED` | Task has been finished
+| `CANCELLED` | Task has been cancelled
+
+=== Task Priority
+
+| Priority | Description
+| `LOW` | Low priority task
+| `MEDIUM` | Normal priority task
+| `HIGH` | High priority task
+| `URGENT` | Urgent priority task
+
+== Error Handling
+
+The API uses standard HTTP status codes and returns error details in JSON format.
+
+=== Common Error Responses
+
+**400 Bad Request** - Validation errors:
+include::{snippets}/create-task-validation-error/response-fields.adoc[]
+
+**404 Not Found** - Resource not found:
+include::{snippets}/get-task-by-id-not-found/response-fields.adoc[]
+
+**500 Internal Server Error** - Server errors:
+```json
+{
+  "status": 500,
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred",
+  "timestamp": "2024-01-15T10:00:00"
+}
+```
+
+=== Error Fields
+
+| Field | Type | Description
+| `status` | int | HTTP status code
+| `error` | String | Error type
+| `message` | String | Detailed error message
+| `timestamp` | LocalDateTime | When the error occurred
+| `fieldErrors` | Map | Field-specific validation errors (400 responses only)
+| `taskId` | String | Task ID for task-related errors
+| `tagId` | String | Tag ID for tag-related errors
+
