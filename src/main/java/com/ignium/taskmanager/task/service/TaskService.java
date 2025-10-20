@@ -1,18 +1,20 @@
 package com.ignium.taskmanager.task.service;
 
-import com.ignium.taskmanager.calendar.entity.CalendarSyncLog;
-import com.ignium.taskmanager.calendar.service.CalendarSyncService;
 import com.ignium.taskmanager.config.exception.TaskNotFoundException;
 import com.ignium.taskmanager.task.dto.CreateTaskRequest;
 import com.ignium.taskmanager.task.dto.TaskResponse;
 import com.ignium.taskmanager.task.dto.UpdateTaskRequest;
 import com.ignium.taskmanager.task.entity.Task;
 import com.ignium.taskmanager.task.entity.Tag;
+import com.ignium.taskmanager.task.event.model.TaskCreatedEvent;
+import com.ignium.taskmanager.task.event.model.TaskDeletedEvent;
+import com.ignium.taskmanager.task.event.model.TaskUpdatedEvent;
 import com.ignium.taskmanager.task.repository.TaskRepository;
 import com.ignium.taskmanager.task.repository.TagRepository;
 import com.ignium.taskmanager.user.service.UserContextService;
 import com.ignium.taskmanager.user.service.UserSyncService;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +39,7 @@ public class TaskService {
     private final TagRepository tagRepository;
     private final UserContextService userContextService;
     private final UserSyncService userSyncService;
-    private final CalendarSyncService calendarSyncService;
+    private final ApplicationEventPublisher eventPublisher;
 
     private Set<Tag> findOrCreateTags(List<String> tagNames, UUID userId) {
         if (tagNames == null || tagNames.isEmpty()) {
@@ -87,7 +89,7 @@ public class TaskService {
             .build();
         
         task = taskRepository.save(task);
-        calendarSyncService.syncTaskToCalendar(task, CalendarSyncLog.SyncOperation.CREATE);
+        eventPublisher.publishEvent(new TaskCreatedEvent(task));
         
         log.info("Task created successfully with ID: {}", task.getId());
         return TaskResponse.from(task);
@@ -175,7 +177,7 @@ public class TaskService {
         }
         
         task = taskRepository.save(task);
-        calendarSyncService.syncTaskToCalendar(task, CalendarSyncLog.SyncOperation.UPDATE);
+        eventPublisher.publishEvent(new TaskUpdatedEvent(task));
         
         log.info("Task updated successfully with ID: {}", task.getId());
         return TaskResponse.from(task);
@@ -190,7 +192,7 @@ public class TaskService {
         Task task = taskRepository.findByIdAndUserId(id, currentUserId)
                 .orElseThrow(() -> new TaskNotFoundException(id));
         
-        calendarSyncService.syncTaskToCalendar(task, CalendarSyncLog.SyncOperation.DELETE);
+        eventPublisher.publishEvent(new TaskDeletedEvent(task));
         
         taskRepository.delete(task);
         

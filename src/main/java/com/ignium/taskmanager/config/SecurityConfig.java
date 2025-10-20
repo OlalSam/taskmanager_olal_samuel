@@ -1,7 +1,6 @@
 package com.ignium.taskmanager.config;
 
 import com.ignium.taskmanager.user.service.UserSyncFilter;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -9,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,8 +16,6 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
-import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -43,9 +39,6 @@ public class SecurityConfig {
     @Value("${app.security.client-id}")
     private String backendClientId;
 
-    @Value("#{'${app.allowed-origins}'.split(',')}")
-    private List<String> allowedOrigins;
-
     private final UserSyncFilter userSyncFilter;
 
     @Bean
@@ -63,7 +56,6 @@ public class SecurityConfig {
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(jwtAuthenticationConverter())
                         )
-                        .bearerTokenResolver(conditionalBearerTokenResolver())
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
 
                 .sessionManagement(session -> session
@@ -74,24 +66,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    @Bean
-    public BearerTokenResolver conditionalBearerTokenResolver() {
-        DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
-        defaultResolver.setAllowUriQueryParameter(true);
-        
-        AntPathMatcher pathMatcher = new AntPathMatcher();
-
-        return request -> {
-            String requestUri = request.getRequestURI();
-            
-            for (String pattern : PUBLIC_ENDPOINTS) {
-                if (pathMatcher.match(pattern, requestUri)) {
-                    return null;
-                }
-            }
-            return defaultResolver.resolve(request);
-        };
-    }
 
     /**
      * JWT authentication converter with custom role mapping.
@@ -101,14 +75,6 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(new KeycloakRoleConverter(backendClientId));
         return converter;
-    }
-
-    /**
-     * Bearer token resolver that supports cookies.
-     */
-    @Bean
-    public BearerTokenResolver bearerTokenResolver() {
-        return new CookieBearerTokenResolver();
     }
 
     /**
@@ -138,29 +104,6 @@ public class SecurityConfig {
             }
 
             return authorities;
-        }
-    }
-
-    /**
-     * Custom BearerTokenResolver that reads token from cookie
-     */
-    static class CookieBearerTokenResolver implements BearerTokenResolver {
-        private static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
-
-        @Override
-        public String resolve(HttpServletRequest request) {
-            // First try to get token from cookie
-            if (request.getCookies() != null) {
-                for (var cookie : request.getCookies()) {
-                    if (ACCESS_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
-                        return cookie.getValue();
-                    }
-                }
-            }
-
-            // Fallback to default resolver (Authorization header)
-            DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
-            return defaultResolver.resolve(request);
         }
     }
 

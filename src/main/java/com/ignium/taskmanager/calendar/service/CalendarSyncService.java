@@ -10,6 +10,7 @@ import com.ignium.taskmanager.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -36,7 +37,7 @@ public class CalendarSyncService {
         maxAttempts = 3,
         backoff = @Backoff(delay = 2000, multiplier = 2)
     )
-    public void syncTaskToCalendar(Task task, CalendarSyncLog.SyncOperation operation) {
+    public void syncTaskToCalendar(Task task, CalendarSyncLog.SyncOperation operation) throws IOException {
         
         // Check if user has calendar connected
         AppUser user = userRepository.findById(task.getUserId()).orElse(null);
@@ -59,21 +60,21 @@ public class CalendarSyncService {
             }
         }
         
-        try {
-            switch (operation) {
-                case CREATE -> createCalendarEvent(task);
-                case UPDATE -> updateCalendarEvent(task);
-                case DELETE -> deleteCalendarEvent(task);
-                case CALENDAR_UPDATE -> {
-                    log.info("CALENDAR_UPDATE operation should not be processed by CalendarSyncService");
-                }
+        switch (operation) {
+            case CREATE -> createCalendarEvent(task);
+            case UPDATE -> updateCalendarEvent(task);
+            case DELETE -> deleteCalendarEvent(task);
+            case CALENDAR_UPDATE -> {
+                log.info("CALENDAR_UPDATE operation should not be processed by CalendarSyncService");
             }
-            logSync(task.getId(), operation, CalendarSyncLog.SyncStatus.SUCCESS, null);
-        } catch (Exception e) {
-            log.error("Sync failed for task {}: {}", task.getId(), e.getMessage());
-            logSync(task.getId(), operation, CalendarSyncLog.SyncStatus.FAILED, e.getMessage());
-            throw new RuntimeException(e); // Trigger retry
         }
+        logSync(task.getId(), operation, CalendarSyncLog.SyncStatus.SUCCESS, null);
+    }
+
+    @Recover
+    public void recover(IOException e, Task task, CalendarSyncLog.SyncOperation operation) {
+        log.error("Sync failed for task {} after multiple retries: {}", task.getId(), e.getMessage());
+        logSync(task.getId(), operation, CalendarSyncLog.SyncStatus.FAILED, e.getMessage());
     }
     
     private void createCalendarEvent(Task task) throws IOException {
