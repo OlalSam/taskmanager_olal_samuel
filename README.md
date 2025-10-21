@@ -86,7 +86,7 @@ google.client-id=YOUR_GOOGLE_CLIENT_ID
 google.client-secret=YOUR_GOOGLE_CLIENT_SECRET
 google.redirect-uri=http://localhost:8080/api/v1/calendar/callback
 ```
-
+Or send email I add you to test users
 ### 4. Run the Application
 
 ```bash
@@ -187,7 +187,6 @@ GET /api/v1/calendar/connect
 ```
 
 Returns Google OAuth URL for calendar connection.
-
 #### Calendar Callback
 ```http
 GET /api/v1/calendar/callback?code={auth_code}&state={user_id}
@@ -372,8 +371,6 @@ logging.level.com.ignium.taskmanager=DEBUG
 logging.level.org.springframework.security=DEBUG
 ```
 
-For detailed troubleshooting, see [TROUBLESHOOTING_GUIDE.md](TROUBLESHOOTING_GUIDE.md)
-
 ## 🏗️ Development
 
 ### Project Structure
@@ -420,15 +417,35 @@ The project includes:
 - **Logging** with SLF4J and Logback
 - **Testing** with JUnit 5 and MockMvc
 
-## 📄 License
+### Things not yet implemented 
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+Google Calendar → App Sync (Webhook)
+
+* Subscription: When a user connects their calendar, the CalendarWebhookService.subscribeUserToCalendarChanges method is called. It registers a webhook with Google,
+  telling Google to send a notification to your /api/v1/calendar/webhook/notifications endpoint whenever the user's primary calendar changes. It correctly stores the
+  channelId, resourceId, and an initial syncToken in the CalendarSubscription entity.
+* Notification: When a change happens in Google Calendar, Google sends a POST request to your CalendarWebhookController.
+* Webhook Handling: The handleNotification method in the controller receives the notification. It correctly identifies the resourceState as exists (meaning a change
+  occurred) and calls calendarWebhookService.processEventUpdate asynchronously.
+* Incremental Sync: The processIncrementalCalendarSync method is the core of the two-way sync. It uses the stored syncToken from the CalendarSubscription to ask Google
+  for only the events that have changed since the last sync. This is far more efficient than re-fetching all events.
+* Processing Changes:
+   * For each changed event from Google, it checks if the event was "cancelled". If so, it calls handleDeletedEvent to find the corresponding task in your database and
+     remove the calendarEventId.
+   * If the event was updated, it calls handleUpdatedEvent.
+* Conflict Resolution: The shouldUpdateFromCalendar method implements a "Last Write Wins" conflict resolution strategy. It compares the updatedAt timestamp of your Task
+  with the updated timestamp from the Google Calendar Event. The task in your database is only updated if the calendar event has a more recent timestamp. This is a
+  crucial detail that many developers would miss.
+* Updating the Task: If an update is warranted, updateTaskFromCalendarEvent maps the fields from the Google Event (summary, description, start time) back to your Task
+  entity and saves it.
+* Webhook Renewal: You have a @Scheduled method (renewExpiredWebhooks) to automatically renew webhook subscriptions before they expire (Google webhooks have a limited
+  lifetime). This ensures the two-way sync doesn't silently fail after a week.
 
 
-## 🔄 Version History
-
-- **v0.0.1-SNAPSHOT** - Initial release with core task management and Google Calendar integration
-
----
+* Decoupling: Using Spring Events to decouple task management from calendar synchronization.
+* Asynchronous Processing: Using @Async for all external communication to keep the API responsive.
+* Efficiency: Using Google's syncToken for incremental updates instead of fetching all events every time.
+* Resilience: Using @Retryable for outgoing API calls and having a scheduled job (@Scheduled) to automatically renew webhook subscriptions.
+* Conflict Resolution: Implementing a clear "Last Write Wins" strategy to handle simultaneous updates.
 
 
