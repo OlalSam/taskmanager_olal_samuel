@@ -262,8 +262,8 @@ Import the provided Postman collections for comprehensive API testing:
 Once the application is running, access the interactive API documentation:
 
 - **HTML Documentation**: `http://localhost:8080/docs/index.html`
-- **Health Check**: `http://localhost:8080/actuator/health`
-- **Application Info**: `http://localhost:8080/actuator/info`
+- **Health Check**: `http://localhost:8081/actuator/health`
+- **Application Info**: `http://localhost:8081/actuator/info`
 
 ### Response Examples
 
@@ -325,7 +325,6 @@ The application uses PostgreSQL with the following default settings:
 
 - **JWT Issuer**: Keycloak at `http://localhost:9020/realms/sare_africa`
 - **Client ID**: `sare_africa_api`
-- **CORS**: Configured for `http://localhost:3000`
 
 ## 🚨 Troubleshooting
 
@@ -350,26 +349,6 @@ psql -h localhost -p 5100 -U user -d taskmanager_db -c "\dt"
 - Check OAuth redirect URI matches exactly
 - Ensure test users are added to OAuth consent screen
 
-#### 4. Application Won't Start
-```bash
-# Check Java version
-java -version
-
-# Check Maven version
-./mvnw -version
-
-# Check application logs
-tail -f logs/application.log
-```
-
-### Debug Mode
-
-Enable debug logging by adding to `application.properties`:
-
-```properties
-logging.level.com.ignium.taskmanager=DEBUG
-logging.level.org.springframework.security=DEBUG
-```
 
 ## 🏗️ Development
 
@@ -394,19 +373,6 @@ src/
         └── user/             # User management tests
 ```
 
-### Building for Production
-
-```bash
-# Build JAR file
-./mvnw clean package
-
-# Run JAR file
-java -jar target/taskmanager-0.0.1-SNAPSHOT.jar
-
-# Build Docker image (if Dockerfile exists)
-docker build -t taskmanager .
-```
-
 ### Code Quality
 
 The project includes:
@@ -417,9 +383,8 @@ The project includes:
 - **Logging** with SLF4J and Logback
 - **Testing** with JUnit 5 and MockMvc
 
-### Things not yet implemented 
 
-Google Calendar → App Sync (Webhook)
+### Google Calendar → App Sync (Webhook)
 
 * Subscription: When a user connects their calendar, the CalendarWebhookService.subscribeUserToCalendarChanges method is called. It registers a webhook with Google,
   telling Google to send a notification to your /api/v1/calendar/webhook/notifications endpoint whenever the user's primary calendar changes. It correctly stores the
@@ -438,7 +403,7 @@ Google Calendar → App Sync (Webhook)
   crucial detail that many developers would miss.
 * Updating the Task: If an update is warranted, updateTaskFromCalendarEvent maps the fields from the Google Event (summary, description, start time) back to your Task
   entity and saves it.
-* Webhook Renewal: You have a @Scheduled method (renewExpiredWebhooks) to automatically renew webhook subscriptions before they expire (Google webhooks have a limited
+* Webhook Renewal: Have a @Scheduled method (renewExpiredWebhooks) to automatically renew webhook subscriptions before they expire (Google webhooks have a limited
   lifetime). This ensures the two-way sync doesn't silently fail after a week.
 
 
